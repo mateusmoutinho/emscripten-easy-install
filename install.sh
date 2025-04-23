@@ -12,16 +12,18 @@ rm -rf /$HOME/emsdk
 cp -r emsdk-$1 /$HOME/emsdk
 
 /$HOME/emsdk/emsdk install $1
-/$HOME/emsdk/emsdk activate $1
+/$HOME/emsdk/emsdk activate $1 > /dev/null
 
 #add to .bashrc
 
 if !  grep -q '#emcc_setup' $HOME/.bashrc; then
 
-    echo '#emcc_setup' >> teste.sh
+    echo '#emcc_setup' >>  $HOME/.bashrc
     echo 'export PATH="$PATH:/$HOME/emsdk"' >> $HOME/.bashrc
     echo 'export PATH="$PATH:/$HOME/emsdk/upstream/emscripten"' >> $HOME/.bashrc
     echo 'export PATH="$PATH:/$HOME/emsdk/node/20.18.0_64bit/bin"' >> $HOME/.bashrc
 fi
 
 
+rm -rf emcc.zip
+rm -rf emsdk-$1
