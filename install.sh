@@ -24,6 +24,8 @@ if !  grep -q '#emcc_setup' $HOME/.bashrc; then
     echo 'export PATH="$PATH:/$HOME/emsdk/node/20.18.0_64bit/bin"' >> $HOME/.bashrc
 fi
 
-
+source $HOME/.bashrc
+echo "Emscripten $1 installed and activated successfully."
 rm -rf emcc.zip
 rm -rf emsdk-$1
+
