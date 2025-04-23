@@ -9,5 +9,4 @@ To install, run the following command, where **4.0.7** is the target version, im
 ```bash
 curl -L https://github.com/mateusmoutinho/emscripten-easy-install/releases/download/0.1.0/emcc_install.sh | bash -s 4.0.7
 ```
-
-This script simplifies the installation process, making it more user-friendly and efficient.
+after runing restart your shell and **emcc** will be availiable
