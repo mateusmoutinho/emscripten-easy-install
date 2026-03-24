@@ -1,31 +1,62 @@
+#!/usr/bin/env bash
+set -e
+
 if [ -z "$1" ]; then
   echo "Error: Version argument is required."
   exit 1
 fi
-rm -rf emsdk-$1
 
-curl -L https://github.com/emscripten-core/emsdk/archive/refs/tags/$1.zip -o emcc.zip
+# Detect shell profile (macOS uses zsh by default)
+detect_profile() {
+  if [ -n "$ZSH_VERSION" ] || [ "$SHELL" = "/bin/zsh" ]; then
+    echo "$HOME/.zshrc"
+  elif [ -n "$BASH_VERSION" ] || [ "$SHELL" = "/bin/bash" ]; then
+    # macOS bash uses .bash_profile, not .bashrc
+    echo "$HOME/.bash_profile"
+  else
+    echo "$HOME/.profile"
+  fi
+}
 
-unzip emcc.zip  || { echo "Error: Failed to extract zip file" >&2; exit 1; }
+PROFILE=$(detect_profile)
 
-rm -rf /$HOME/emsdk
-cp -r emsdk-$1 /$HOME/emsdk
+# Cleanup any previous partial download
+rm -rf "emsdk-$1" emcc.zip
 
-/$HOME/emsdk/emsdk install $1
-/$HOME/emsdk/emsdk activate $1 > /dev/null
+# Download
+curl -L "https://github.com/emscripten-core/emsdk/archive/refs/tags/$1.zip" -o emcc.zip
 
-#add to .bashrc
+# Extract
+unzip emcc.zip || { echo "Error: Failed to extract zip file" >&2; exit 1; }
 
-if !  grep -q '#emcc_setup' $HOME/.bashrc; then
+# Install to $HOME/emsdk
+rm -rf "$HOME/emsdk"
+cp -r "emsdk-$1" "$HOME/emsdk"
 
-    echo '#emcc_setup' >>  $HOME/.bashrc
-    echo 'export PATH="$PATH:/$HOME/emsdk"' >> $HOME/.bashrc
-    echo 'export PATH="$PATH:/$HOME/emsdk/upstream/emscripten"' >> $HOME/.bashrc
-    echo 'export PATH="$PATH:/$HOME/emsdk/node/20.18.0_64bit/bin"' >> $HOME/.bashrc
+# Make emsdk executable (sometimes lost after cp)
+chmod +x "$HOME/emsdk/emsdk"
+
+"$HOME/emsdk/emsdk" install "$1"
+"$HOME/emsdk/emsdk" activate "$1" > /dev/null
+
+# Add to shell profile (only once)
+if ! grep -q '#emcc_setup' "$PROFILE"; then
+  {
+    echo ''
+    echo '#emcc_setup'
+    echo 'export PATH="$PATH:$HOME/emsdk"'
+    echo 'export PATH="$PATH:$HOME/emsdk/upstream/emscripten"'
+    echo "export PATH=\"\$PATH:\$HOME/emsdk/node/20.18.0_64bit/bin\""
+  } >> "$PROFILE"
+  echo "Added emcc paths to $PROFILE"
 fi
 
-source $HOME/.bashrc
-echo "Emscripten $1 installed and activated successfully."
-rm -rf emcc.zip
-rm -rf emsdk-$1
+# Source the profile in current session
+# shellcheck disable=SC1090
+source "$PROFILE"
 
+echo "Emscripten $1 installed and activated successfully."
+echo "Run 'source $PROFILE' or open a new terminal to use emcc."
+
+# Cleanup
+rm -rf emcc.zip "emsdk-$1"
